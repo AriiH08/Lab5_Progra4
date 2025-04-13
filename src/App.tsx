@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 
 interface Producto {
@@ -9,6 +9,19 @@ function App() {
   const [productoContexto, setProductoContexto] = useState('')
   const [productoList, setProductList] = useState<Producto[]>([])
   const [editIndex, setEditIndex] = useState<number | null>(null)
+
+
+  useEffect(() => {
+    const storedList = localStorage.getItem('todoList')
+    if (storedList) {
+      setProductList(JSON.parse(storedList))
+    }
+  }, [])
+
+
+  useEffect(() => {
+    localStorage.setItem('todoList', JSON.stringify(productoList))
+  }, [productoList])
 
   const handleChange = (e: any) => {
     setProductoContexto(e.target.value)
