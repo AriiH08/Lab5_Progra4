@@ -3,6 +3,8 @@ import './App.css'
 
 interface Producto {
   descripcion: string
+  sinStock: boolean
+  ultimaActualizacion: string | null
 }
 
 function App() {
@@ -10,14 +12,12 @@ function App() {
   const [productoList, setProductList] = useState<Producto[]>([])
   const [editIndex, setEditIndex] = useState<number | null>(null)
 
-
   useEffect(() => {
     const storedList = localStorage.getItem('todoList')
     if (storedList) {
       setProductList(JSON.parse(storedList))
     }
   }, [])
-
 
   useEffect(() => {
     localStorage.setItem('todoList', JSON.stringify(productoList))
@@ -27,12 +27,21 @@ function App() {
     setProductoContexto(e.target.value)
   }
 
+  const ordenarProductos = (lista: Producto[]) => {
+    const conStock = lista.filter(p => !p.sinStock)
+    const sinStock = lista.filter(p => p.sinStock)
+    return [...conStock, ...sinStock]
+  }
+
   const handleAdd = () => {
     if (productoContexto.trim() === '') return
     const newProducto: Producto = {
       descripcion: productoContexto,
+      sinStock: false,
+      ultimaActualizacion: null
     }
-    setProductList([newProducto, ...productoList])
+    const nuevaLista = ordenarProductos([newProducto, ...productoList])
+    setProductList(nuevaLista)
     setProductoContexto('')
   }
 
@@ -40,7 +49,8 @@ function App() {
     if (editIndex === null || productoContexto.trim() === '') return
     const updatedList = [...productoList]
     updatedList[editIndex].descripcion = productoContexto
-    setProductList(updatedList)
+    const nuevaLista = ordenarProductos(updatedList)
+    setProductList(nuevaLista)
     setEditIndex(null)
     setProductoContexto('')
   }
@@ -54,9 +64,29 @@ function App() {
     setProductoContexto('')
   }
 
+  const handleClearAll = () => {
+    setProductList([])
+    setEditIndex(null)
+    setProductoContexto('')
+  }
+
   const handleSelect = (index: number) => {
     setEditIndex(index)
     setProductoContexto(productoList[index].descripcion)
+  }
+
+  const handleMarkOutOfStock = () => {
+    if (editIndex === null) return
+
+    const updatedList = [...productoList]
+    const item = updatedList[editIndex]
+
+    if (!item.sinStock) {
+      item.sinStock = true
+      item.ultimaActualizacion = new Date().toLocaleString()
+      const nuevaLista = ordenarProductos(updatedList)
+      setProductList(nuevaLista)
+    }
   }
 
   return (
@@ -72,6 +102,12 @@ function App() {
           <button onClick={handleAdd} style={{ marginLeft: 10 }}>Añadir</button>
           <button onClick={handleUpdate} style={{ marginLeft: 10 }}>Actualizar</button>
           <button onClick={handleRemove} style={{ marginLeft: 10 }}>Eliminar</button>
+          <button onClick={handleMarkOutOfStock} style={{ marginLeft: 10, backgroundColor: '#ffb6c1' }}>
+            Marcar Sin Stock
+          </button>
+          <button onClick={handleClearAll} style={{ marginLeft: 10, backgroundColor: '#ff5c5c', color: 'white' }}>
+            Limpiar Página
+          </button>
         </div>
       </div>
 
@@ -87,6 +123,11 @@ function App() {
             }}
           >
             {producto.descripcion}
+            {producto.sinStock && (
+              <div style={{ fontSize: '0.8em', color: '#cc0000' }}>
+                Sin stock desde: {producto.ultimaActualizacion}
+              </div>
+            )}
           </li>
         ))}
       </ul>
